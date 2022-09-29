@@ -15,6 +15,7 @@ type (
 	NextWorkflow      func(string)
 	GetSyncLimit      func(string) (int, error)
 	IsWorkflowDeleted func(string) bool
+	GetWorkflow       func(key string) (*wfv1.Workflow, error)
 )
 
 type Manager struct {
@@ -23,15 +24,17 @@ type Manager struct {
 	nextWorkflow NextWorkflow
 	getSyncLimit GetSyncLimit
 	isWFDeleted  IsWorkflowDeleted
+	getWorkflow  GetWorkflow
 }
 
-func NewLockManager(getSyncLimit GetSyncLimit, nextWorkflow NextWorkflow, isWFDeleted IsWorkflowDeleted) *Manager {
+func NewLockManager(getSyncLimit GetSyncLimit, nextWorkflow NextWorkflow, isWFDeleted IsWorkflowDeleted, getWorkflow GetWorkflow) *Manager {
 	return &Manager{
 		syncLockMap:  make(map[string]Semaphore),
 		lock:         &sync.Mutex{},
 		nextWorkflow: nextWorkflow,
 		getSyncLimit: getSyncLimit,
 		isWFDeleted:  isWFDeleted,
+		getWorkflow:  getWorkflow,
 	}
 }
 
@@ -163,6 +166,7 @@ func (cm *Manager) TryAcquire(wf *wfv1.Workflow, nodeName string, syncLockRef *w
 
 	ensureInit(wf, syncLockRef.GetType())
 	currentHolders := cm.getCurrentLockHolders(lockKey)
+
 	acquired, msg := lock.tryAcquire(holderKey)
 	if acquired {
 		updated := wf.Status.Synchronization.GetStatus(syncLockRef.GetType()).LockAcquired(holderKey, lockKey, currentHolders)
@@ -316,7 +320,7 @@ func (cm *Manager) initializeSemaphore(semaphoreName string) (Semaphore, error) 
 	if err != nil {
 		return nil, err
 	}
-	return NewSemaphore(semaphoreName, limit, cm.nextWorkflow, "semaphore"), nil
+	return NewSemaphore(semaphoreName, limit, cm.nextWorkflow, "semaphore", cm.getWorkflow), nil
 }
 
 func (cm *Manager) initializeMutex(mutexName string) Semaphore {

@@ -1650,6 +1650,8 @@ func (s *Synchronization) GetType() SynchronizationType {
 type SemaphoreRef struct {
 	// ConfigMapKeyRef is configmap selector for Semaphore configuration
 	ConfigMapKeyRef *apiv1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty" protobuf:"bytes,1,opt,name=configMapKeyRef"`
+	// RebalanceStrategyKey is used to balance resources that each user has access to
+	RebalanceKey *string `json:"rebalanceKey"`
 }
 
 // Mutex holds Mutex configuration
