@@ -4721,7 +4721,15 @@ func schema_pkg_apis_workflow_v1alpha1_SemaphoreRef(ref common.ReferenceCallback
 							Ref:         ref("k8s.io/api/core/v1.ConfigMapKeySelector"),
 						},
 					},
+					"rebalanceKey": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RebalanceKey groups key requesters across templates and workflows - these groups all have access to the same share of locks",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
+				Required: []string{"rebalanceKey"},
 			},
 		},
 		Dependencies: []string{

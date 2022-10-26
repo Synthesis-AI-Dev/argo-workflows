@@ -2311,6 +2311,11 @@ func (in *SemaphoreRef) DeepCopyInto(out *SemaphoreRef) {
 		*out = new(v1.ConfigMapKeySelector)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.RebalanceKey != nil {
+		in, out := &in.RebalanceKey, &out.RebalanceKey
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 

@@ -2261,6 +2261,7 @@ SemaphoreRef is a reference of Semaphore
 | Field Name | Field Type | Description   |
 |:----------:|:----------:|---------------|
 |`configMapKeyRef`|[`ConfigMapKeySelector`](#configmapkeyselector)|ConfigMapKeyRef is configmap selector for Semaphore configuration|
+|`rebalanceKey`|`string`|RebalanceKey groups key requesters across templates and workflows - these groups all have access to the same share of locks|
 
 ## ArtifactLocation
 

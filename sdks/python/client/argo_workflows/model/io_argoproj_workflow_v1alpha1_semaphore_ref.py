@@ -87,6 +87,7 @@ class IoArgoprojWorkflowV1alpha1SemaphoreRef(ModelNormal):
         """
         lazy_import()
         return {
+            'rebalance_key': (str,),  # noqa: E501
             'config_map_key_ref': (ConfigMapKeySelector,),  # noqa: E501
         }
 
@@ -96,6 +97,7 @@ class IoArgoprojWorkflowV1alpha1SemaphoreRef(ModelNormal):
 
 
     attribute_map = {
+        'rebalance_key': 'rebalanceKey',  # noqa: E501
         'config_map_key_ref': 'configMapKeyRef',  # noqa: E501
     }
 
@@ -106,8 +108,11 @@ class IoArgoprojWorkflowV1alpha1SemaphoreRef(ModelNormal):
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(cls, rebalance_key, *args, **kwargs):  # noqa: E501
         """IoArgoprojWorkflowV1alpha1SemaphoreRef - a model defined in OpenAPI
+
+        Args:
+            rebalance_key (str): RebalanceKey groups key requesters across templates and workflows - these groups all have access to the same share of locks
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -168,6 +173,7 @@ class IoArgoprojWorkflowV1alpha1SemaphoreRef(ModelNormal):
         self._configuration = _configuration
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
+        self.rebalance_key = rebalance_key
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \
@@ -188,8 +194,11 @@ class IoArgoprojWorkflowV1alpha1SemaphoreRef(ModelNormal):
     ])
 
     @convert_js_args_to_python_args
-    def __init__(self, *args, **kwargs):  # noqa: E501
+    def __init__(self, rebalance_key, *args, **kwargs):  # noqa: E501
         """IoArgoprojWorkflowV1alpha1SemaphoreRef - a model defined in OpenAPI
+
+        Args:
+            rebalance_key (str): RebalanceKey groups key requesters across templates and workflows - these groups all have access to the same share of locks
 
         Keyword Args:
             _check_type (bool): if True, values for parameters in openapi_types
@@ -248,6 +257,7 @@ class IoArgoprojWorkflowV1alpha1SemaphoreRef(ModelNormal):
         self._configuration = _configuration
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
+        self.rebalance_key = rebalance_key
         for var_name, var_value in kwargs.items():
             if var_name not in self.attribute_map and \
                         self._configuration is not None and \

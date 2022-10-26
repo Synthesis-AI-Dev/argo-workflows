@@ -114,6 +114,10 @@ type Config struct {
 
 	RetentionPolicy *RetentionPolicy `json:"retentionPolicy,omitempty"`
 
+	// SemaphoreStrategies maps a lock name to the type of strategy that should be used to assign locks to
+	// pending lock holders.
+	SemaphoreStrategies SemaphoreStrategyTypes `json:"semaphoreStrategies,omitempty"`
+
 	// NavColor is an ui navigation bar background color
 	NavColor string `json:"navColor,omitempty"`
 }
@@ -273,6 +277,18 @@ const (
 	TemplateReferencingStrict TemplateReferencing = "Strict"
 	TemplateReferencingSecure TemplateReferencing = "Secure"
 )
+
+// SemaphoreStrategy determines how locks are distributed to pending lock holders.
+type SemaphoreStrategy string
+
+const (
+	SemaphoreStrategyDefault    SemaphoreStrategy = "default"
+	SemaphoreStrategyRebalanced SemaphoreStrategy = "rebalanced"
+)
+
+// SemaphoreStrategyTypes maps a lock name to the type of strategy that should be used to assign locks to
+// pending lock holders.
+type SemaphoreStrategyTypes map[string]SemaphoreStrategy
 
 func (req *WorkflowRestrictions) MustUseReference() bool {
 	if req == nil {

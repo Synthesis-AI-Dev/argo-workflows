@@ -1522,6 +1522,10 @@ spec:
                         required:
                         - key
                         type: object
+                      rebalanceKey:
+                        type: string
+                    required:
+                    - rebalanceKey
                     type: object
                 type: object
               templateDefaults:
@@ -7483,6 +7487,10 @@ spec:
                             required:
                             - key
                             type: object
+                          rebalanceKey:
+                            type: string
+                        required:
+                        - rebalanceKey
                         type: object
                     type: object
                   timeout:
@@ -14144,6 +14152,10 @@ spec:
                               required:
                               - key
                               type: object
+                            rebalanceKey:
+                              type: string
+                          required:
+                          - rebalanceKey
                           type: object
                       type: object
                     timeout:
@@ -23877,6 +23889,10 @@ spec:
                               required:
                               - key
                               type: object
+                            rebalanceKey:
+                              type: string
+                          required:
+                          - rebalanceKey
                           type: object
                       type: object
                     timeout:
@@ -26067,6 +26083,10 @@ spec:
                             required:
                             - key
                             type: object
+                          rebalanceKey:
+                            type: string
+                        required:
+                        - rebalanceKey
                         type: object
                     type: object
                   templateDefaults:
@@ -32028,6 +32048,10 @@ spec:
                                 required:
                                 - key
                                 type: object
+                              rebalanceKey:
+                                type: string
+                            required:
+                            - rebalanceKey
                             type: object
                         type: object
                       timeout:
@@ -38689,6 +38713,10 @@ spec:
                                   required:
                                   - key
                                   type: object
+                                rebalanceKey:
+                                  type: string
+                              required:
+                              - rebalanceKey
                               type: object
                           type: object
                         timeout:

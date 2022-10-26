@@ -1184,6 +1184,9 @@ message SemaphoreHolding {
 message SemaphoreRef {
   // ConfigMapKeyRef is configmap selector for Semaphore configuration
   optional k8s.io.api.core.v1.ConfigMapKeySelector configMapKeyRef = 1;
+
+  // RebalanceKey groups key requesters across templates and workflows - these groups all have access to the same share of locks
+  optional string rebalanceKey = 2;
 }
 
 message SemaphoreStatus {

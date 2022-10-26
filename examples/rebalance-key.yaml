@@ -1,0 +1,114 @@
+# See docs/rebalance-key.yaml for more information.
+# 
+# Suppose we have some semaphore with a limit of 4 that we want to share equally amongst lock requesters
+# with the same rebalanceKey (see below in this example)
+# 
+# We'd first set up our config file workflow-controller-configmap.yaml like so:
+# 
+# ```
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: my-config
+# data:
+#   test-scale: "4"
+#   semaphoreStrategies: |
+#     test-scale: "rebalanced"
+# ```
+# 
+# By setting `test-scale: "rebalanced"`, we're essentially telling the semaphore to continuously rebalance
+# the number of locks that can be distributed to each unique "rebalanceKey"
+# 
+# If we do not wish to "rebalance", and use the default semaphore behavior instead, we can either specify
+# "default" or simply not include the lock name in "semaphoreStrategy".
+# 
+# Note that when "rebalanced" is used, all lock requesters with no rebalanceKey specified will all be
+# grouped together. Also note that priorities are currently ignored with semaphores using the rebalance
+# strategy. Also note that rebalance key works anywhere a semaphore can be used (e.g. workflow level or
+# virtual node (steps,dag) level)
+#---
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: rebalance-key-aaaa
+spec:
+  activeDeadlineSeconds: 100000
+  entrypoint: synchronization-tmpl-level-example
+  serviceAccountName: argo
+  arguments:
+    parameters:
+      - name: num
+        value: 1
+  podGC:
+    strategy: OnPodSuccess
+  templates:
+  - name: synchronization-tmpl-level-example
+    steps:
+    - - name: generate
+        template: gen-number-list    
+    - - name: synchronization-acquire-lock
+        template: acquire-lock
+        withParam: "{{steps.generate.outputs.result}}"
+
+  - name: gen-number-list
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import json
+        import sys
+        json.dump([i for i in range(0, {{workflow.parameters.num}})], sys.stdout)
+  - name: acquire-lock
+    synchronization:
+      semaphore:
+        configMapKeyRef:
+          name: workflow-controller-configmap
+          key: test-scale
+        rebalanceKey: "rebalance-key-aaaa"
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo acquired lock; sleep $((20 + RANDOM % 11));"]
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: rebalance-key-bbbb
+spec:
+  activeDeadlineSeconds: 100000
+  entrypoint: synchronization-tmpl-level-example
+  serviceAccountName: argo
+  arguments:
+    parameters:
+      - name: num
+        value: 1
+  podGC:
+    strategy: OnPodSuccess
+  templates:
+  - name: synchronization-tmpl-level-example
+    steps:
+    - - name: generate
+        template: gen-number-list    
+    - - name: synchronization-acquire-lock
+        template: acquire-lock
+        withParam: "{{steps.generate.outputs.result}}"
+
+  - name: gen-number-list
+    script:
+      image: python:alpine3.6
+      command: [python]
+      source: |
+        import json
+        import sys
+        json.dump([i for i in range(0, {{workflow.parameters.num}})], sys.stdout)
+  - name: acquire-lock
+    synchronization:
+      semaphore:
+        configMapKeyRef:
+          name: workflow-controller-configmap
+          key: test-scale
+        rebalanceKey: "rebalance-key-bbbb"
+    container:
+      image: alpine:latest
+      command: [sh, -c]
+      args: ["echo acquired lock; sleep $((20 + RANDOM % 11));"]

@@ -5986,6 +5986,10 @@ spec:
                               required:
                               - key
                               type: object
+                            rebalanceKey:
+                              type: string
+                          required:
+                          - rebalanceKey
                           type: object
                       type: object
                     timeout:

@@ -6900,8 +6900,15 @@
         "configMapKeyRef": {
           "$ref": "#/definitions/io.k8s.api.core.v1.ConfigMapKeySelector",
           "description": "ConfigMapKeyRef is configmap selector for Semaphore configuration"
+        },
+        "rebalanceKey": {
+          "description": "RebalanceKey groups key requesters across templates and workflows - these groups all have access to the same share of locks",
+          "type": "string"
         }
       },
+      "required": [
+        "rebalanceKey"
+      ],
       "type": "object"
     },
     "io.argoproj.workflow.v1alpha1.SemaphoreStatus": {

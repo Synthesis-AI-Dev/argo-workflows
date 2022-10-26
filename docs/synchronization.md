@@ -2,7 +2,7 @@
 
 ![GA](assets/ga.svg)
 
-> v2.10 and after
+> beta
 
 ## Introduction
 Synchronization enables users to limit the parallel execution of certain workflows or 

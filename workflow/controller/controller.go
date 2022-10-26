@@ -319,6 +319,20 @@ func (wfc *WorkflowController) createSynchronizationManager(ctx context.Context)
 		return strconv.Atoi(value)
 	}
 
+	getSemaphoreStrategy := func(lockKey string) (config.SemaphoreStrategy, error) {
+		if wfc.Config.SemaphoreStrategies == nil {
+			return config.SemaphoreStrategyDefault, nil
+		}
+		lockName, err := sync.DecodeLockName(lockKey)
+		if err != nil {
+			return "", err
+		}
+		if wfc.Config.SemaphoreStrategies[lockName.Key] == "" {
+			return config.SemaphoreStrategyDefault, nil
+		}
+		return wfc.Config.SemaphoreStrategies[lockName.Key], nil
+	}
+
 	nextWorkflow := func(key string) {
 		wfc.wfQueue.AddRateLimited(key)
 	}
@@ -332,7 +346,7 @@ func (wfc *WorkflowController) createSynchronizationManager(ctx context.Context)
 		return exists
 	}
 
-	wfc.syncManager = sync.NewLockManager(getSyncLimit, nextWorkflow, isWFDeleted)
+	wfc.syncManager = sync.NewLockManager(getSyncLimit, getSemaphoreStrategy, nextWorkflow, isWFDeleted)
 }
 
 // list all running workflows to initialize throttler and syncManager
