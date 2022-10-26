@@ -24,7 +24,7 @@ func NewMutex(name string, nextWorkflow NextWorkflow) *PriorityMutex {
 	return &PriorityMutex{
 		name:  name,
 		lock:  &sync.Mutex{},
-		mutex: NewSemaphore(name, 1, nextWorkflow, "mutex"),
+		mutex: NewSemaphore(name, 1, nextWorkflow, "mutex", &priorityQueue{itemByKey: make(map[string]*item)}),
 	}
 }
 

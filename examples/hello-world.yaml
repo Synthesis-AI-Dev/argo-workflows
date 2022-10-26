@@ -10,6 +10,7 @@ metadata:
       You can also run it in Python: https://couler-proj.github.io/couler/examples/#hello-world
 spec:
   entrypoint: whalesay
+  serviceAccountName: argo
   templates:
   - name: whalesay
     container:

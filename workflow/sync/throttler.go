@@ -151,6 +151,17 @@ type priorityQueue struct {
 	itemByKey map[string]*item
 }
 
+// this is a no-op but helps us implement OrderedItems
+func (pq *priorityQueue) reorder() error {
+	return nil
+}
+
+// I'll delete this.. adding so I can implement OrderedItems
+// report() is to help me debug rebalance
+func (pq *priorityQueue) report() {
+
+}
+
 func (pq *priorityQueue) pop() *item {
 	return heap.Pop(pq).(*item)
 }
@@ -168,6 +179,10 @@ func (pq *priorityQueue) add(key Key, priority int32, creationTime time.Time) {
 	} else {
 		heap.Push(pq, &item{key: key, priority: priority, creationTime: creationTime})
 	}
+}
+
+func (pq *priorityQueue) all() []*item {
+	return pq.items
 }
 
 func (pq *priorityQueue) remove(key Key) {

@@ -14,3 +14,14 @@ type Semaphore interface {
 	getLimit() int
 	resize(n int) bool
 }
+
+type OrderedItems interface {
+	reorder() error
+	report()
+	peek() *item
+	pop() *item
+	add(key Key, priority int32, creationTime time.Time)
+	remove(key Key)
+	all() []*item
+	Len() int
+}
