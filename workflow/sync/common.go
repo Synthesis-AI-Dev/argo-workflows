@@ -1,12 +1,16 @@
 package sync
 
-import "time"
+import (
+	"time"
+
+	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+)
 
 type Semaphore interface {
 	acquire(holderKey string) bool
 	tryAcquire(holderKey string) (bool, string)
 	release(key string) bool
-	addToQueue(holderKey string, priority int32, creationTime time.Time)
+	addToQueue(holderKey string, priority int32, creationTime time.Time, syncLockRef *wfv1.Synchronization)
 	removeFromQueue(holderKey string)
 	getCurrentHolders() []string
 	getCurrentPending() []string
@@ -15,13 +19,15 @@ type Semaphore interface {
 	resize(n int) bool
 }
 
-type OrderedItems interface {
-	reorder() error
+// SemaphoreStrategyQueue is aware that it supports a semaphore, and implements a specific
+// strategy for maintaining order of pending holders
+type SemaphoreStrategyQueue interface {
 	report()
 	peek() *item
 	pop() *item
-	add(key Key, priority int32, creationTime time.Time)
+	add(key Key, priority int32, creationTime time.Time, syncLockRef *wfv1.Synchronization)
 	remove(key Key)
+	onRelease(key Key) error
 	all() []*item
 	Len() int
 }

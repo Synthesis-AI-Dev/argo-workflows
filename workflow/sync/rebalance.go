@@ -1,10 +1,10 @@
 package sync
 
 import (
-	"fmt"
 	"math"
-	"strings"
 	"time"
+
+	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 )
 
 // TODO: maintain cache, expire entries
@@ -13,7 +13,6 @@ import (
 type RebalanceQueue struct {
 	queue             []*itemWithRebalanceKey // standard item with an attached rebalance key
 	limit             int                     // global limit for calculating rebalanced queue
-	getWorkflow       GetWorkflow             // a pointer to a function that can get a workflow from key
 	rebalanceKeyCache map[string]string       // mapping from resource name (holder) to holder's rebalance key
 	semaphore         Semaphore               // reference to parent semaphore
 }
@@ -23,10 +22,9 @@ type itemWithRebalanceKey struct {
 	rebalanceKey string
 }
 
-func NewRebalanceQueue(limit int, getWorkflow GetWorkflow) *RebalanceQueue {
+func NewRebalanceQueue(limit int) *RebalanceQueue {
 	return &RebalanceQueue{
 		limit:             limit,
-		getWorkflow:       getWorkflow,
 		queue:             make([]*itemWithRebalanceKey, 0),
 		rebalanceKeyCache: make(map[string]string, 0),
 	}
@@ -67,25 +65,19 @@ func (r *RebalanceQueue) report() {
 }
 
 // determines the best ordering based on currently-outstanding keys
-func (r *RebalanceQueue) reorder() error {
+func (r *RebalanceQueue) onRelease(key Key) error {
 	// we need pending + holding counts for rebalance keys, and just holding counts
 	allRebalanceKeys := make(map[string]int, 0)
 	holderRebalanceKeys := make(map[string]int, 0)
 
 	for _, h := range r.semaphore.getCurrentHolders() {
-		rk, err := r.getRebalanceKey(h)
-		if err != nil {
-			return err
-		}
+		rk := r.rebalanceKeyCache[h]
 		holderRebalanceKeys[rk] += 1
 		allRebalanceKeys[rk] += 1
 	}
 
 	for _, p := range r.queue {
-		rk, err := r.getRebalanceKey(p.item.key)
-		if err != nil {
-			return err
-		}
+		rk := r.rebalanceKeyCache[p.item.key]
 		allRebalanceKeys[rk] += 1
 	}
 
@@ -111,41 +103,10 @@ func (r *RebalanceQueue) reorder() error {
 		}
 	}
 
+	delete(r.rebalanceKeyCache, key)
+
 	r.queue = append(can, cant...)
 	return nil
-}
-
-// getRebalanceKey first checks cache for rebalance key, based on requester, or calculates it
-func (r *RebalanceQueue) getRebalanceKey(requesterKey string) (Key, error) {
-	if r.rebalanceKeyCache[requesterKey] != "" {
-		return r.rebalanceKeyCache[requesterKey], nil
-	}
-
-	lockNameItems := strings.Split(r.semaphore.getName(), "/")
-	lockRefKey := lockNameItems[len(lockNameItems)-1]
-
-	rebalanceKey := "<no-rebalance-key>"
-	items := strings.Split(requesterKey, "/")
-	wfKey := items[0] + "/" + items[1]
-
-	wf, err := r.getWorkflow(wfKey)
-	if err != nil {
-		return rebalanceKey, fmt.Errorf("could not find workflow from key %s", wfKey)
-	}
-
-	for _, t := range wf.Spec.Templates {
-		// if rebalance key exists here
-		if t.Synchronization != nil && t.Synchronization.Semaphore != nil && t.Synchronization.Semaphore.RebalanceKey != nil {
-			// and the lock key refs match
-			if t.Synchronization.Semaphore.ConfigMapKeyRef.Key == lockRefKey {
-				rebalanceKey = *t.Synchronization.Semaphore.RebalanceKey
-			}
-		}
-	}
-
-	// set cache value for requester
-	r.rebalanceKeyCache[requesterKey] = rebalanceKey
-	return rebalanceKey, nil
 }
 
 func (r *RebalanceQueue) peek() *item {
@@ -159,20 +120,26 @@ func (r *RebalanceQueue) pop() *item {
 }
 
 // rebalance queues, at the moment, do not support priority
-func (r *RebalanceQueue) add(key Key, _ int32, creationTime time.Time) {
-	rk, _ := r.getRebalanceKey(key)
+//
+// if queue has key, skip
+// if queue doesn't, add along with rebalance key
+func (r *RebalanceQueue) add(key Key, _ int32, creationTime time.Time, syncLockRef *wfv1.Synchronization) {
 	found := false
 	for _, q := range r.queue {
 		if q.item.key == key {
 			found = true
 		}
 	}
-	// ?? for some reason TryAcquire always tries to add again, so this function (as in the priority
-	// queue), must check for this key's existence
+
 	if !found {
+		rebalanceKey := "<no-key-default-key>"
+		if syncLockRef != nil && syncLockRef.Semaphore != nil && syncLockRef.Semaphore.RebalanceKey != nil {
+			rebalanceKey = *syncLockRef.Semaphore.RebalanceKey
+		}
+
 		r.queue = append(r.queue, &itemWithRebalanceKey{
 			item:         &item{key: key, creationTime: creationTime, priority: 1, index: -1},
-			rebalanceKey: rk,
+			rebalanceKey: rebalanceKey,
 		})
 	}
 }

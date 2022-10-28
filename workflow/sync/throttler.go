@@ -95,7 +95,7 @@ func (t *throttler) Add(key Key, priority int32, creationTime time.Time) {
 	if _, ok := t.pending[bucketKey]; !ok {
 		t.pending[bucketKey] = &priorityQueue{itemByKey: make(map[string]*item)}
 	}
-	t.pending[bucketKey].add(key, priority, creationTime)
+	t.pending[bucketKey].add(key, priority, creationTime, nil)
 	t.queueThrottled(bucketKey)
 }
 
@@ -152,7 +152,7 @@ type priorityQueue struct {
 }
 
 // this is a no-op but helps us implement OrderedItems
-func (pq *priorityQueue) reorder() error {
+func (pq *priorityQueue) onRelease(key Key) error {
 	return nil
 }
 
@@ -170,7 +170,7 @@ func (pq *priorityQueue) peek() *item {
 	return pq.items[0]
 }
 
-func (pq *priorityQueue) add(key Key, priority int32, creationTime time.Time) {
+func (pq *priorityQueue) add(key Key, priority int32, creationTime time.Time, _ *wfv1.Synchronization) {
 	if res, ok := pq.itemByKey[key]; ok {
 		if res.priority != priority {
 			res.priority = priority

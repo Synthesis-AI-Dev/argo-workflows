@@ -332,7 +332,7 @@ func (wfc *WorkflowController) createSynchronizationManager(ctx context.Context)
 		return exists
 	}
 
-	wfc.syncManager = sync.NewLockManager(getSyncLimit, nextWorkflow, isWFDeleted, wfc.getWorkflow)
+	wfc.syncManager = sync.NewLockManager(getSyncLimit, nextWorkflow, isWFDeleted)
 }
 
 // list all running workflows to initialize throttler and syncManager
@@ -536,30 +536,6 @@ func (wfc *WorkflowController) getPod(namespace string, podName string) (*apiv1.
 		return nil, fmt.Errorf("object is not a pod")
 	}
 	return pod, nil
-}
-
-func (wfc *WorkflowController) getWorkflow(key string) (*wfv1.Workflow, error) {
-	obj, exists, err := wfc.wfInformer.GetIndexer().GetByKey(key)
-	if err != nil {
-		return nil, fmt.Errorf("unexpected error searching for workflow with key %s", key)
-	}
-	if !exists {
-		return nil, fmt.Errorf("wfInformer could not find workflow %s, but should be able to", key)
-	}
-
-	// The workflow informer receives unstructured objects to deal with the possibility of invalid
-	// workflow manifests that are unable to unmarshal to workflow objects
-	un, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		return nil, fmt.Errorf("could not convert wfInformer's response to a workflow with key %s", key)
-	}
-
-	wf, err := util.FromUnstructured(un)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal key %s to workflow object", key)
-	}
-
-	return wf, nil
 }
 
 func (wfc *WorkflowController) signalContainers(namespace string, podName string, sig syscall.Signal) (time.Duration, error) {

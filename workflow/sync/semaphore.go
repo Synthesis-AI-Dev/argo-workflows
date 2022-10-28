@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	log "github.com/sirupsen/logrus"
 	sema "golang.org/x/sync/semaphore"
 )
@@ -13,7 +14,7 @@ import (
 type PrioritySemaphore struct {
 	name         string
 	limit        int
-	pending      OrderedItems
+	pending      SemaphoreStrategyQueue
 	semaphore    *sema.Weighted
 	lockHolder   map[string]bool
 	lock         *sync.Mutex
@@ -23,7 +24,7 @@ type PrioritySemaphore struct {
 
 var _ Semaphore = &PrioritySemaphore{}
 
-func NewSemaphore(name string, limit int, nextWorkflow NextWorkflow, lockType string, orderedItems OrderedItems) *PrioritySemaphore {
+func NewSemaphore(name string, limit int, nextWorkflow NextWorkflow, lockType string, orderedItems SemaphoreStrategyQueue) *PrioritySemaphore {
 	return &PrioritySemaphore{
 		name:         name,
 		limit:        limit,
@@ -98,7 +99,7 @@ func (s *PrioritySemaphore) release(key string) bool {
 		availableLocks := s.limit - len(s.lockHolder)
 		s.log.Infof("Lock has been released by %s. Available locks: %d", key, availableLocks)
 		if s.pending.Len() > 0 {
-			s.pending.reorder()
+			s.pending.onRelease(key)
 			s.notifyWaiters()
 		}
 	}
@@ -133,7 +134,7 @@ func workflowKey(i *item) string {
 }
 
 // addToQueue adds the holderkey into priority queue that maintains the priority order to acquire the lock.
-func (s *PrioritySemaphore) addToQueue(holderKey string, priority int32, creationTime time.Time) {
+func (s *PrioritySemaphore) addToQueue(holderKey string, priority int32, creationTime time.Time, syncLockRef *wfv1.Synchronization) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -142,7 +143,7 @@ func (s *PrioritySemaphore) addToQueue(holderKey string, priority int32, creatio
 		return
 	}
 
-	s.pending.add(holderKey, priority, creationTime)
+	s.pending.add(holderKey, priority, creationTime, syncLockRef)
 	s.log.Debugf("Added into queue: %s", holderKey)
 }
 

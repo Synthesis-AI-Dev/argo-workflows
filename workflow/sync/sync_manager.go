@@ -15,7 +15,6 @@ type (
 	NextWorkflow      func(string)
 	GetSyncLimit      func(string) (int, error)
 	IsWorkflowDeleted func(string) bool
-	GetWorkflow       func(key string) (*wfv1.Workflow, error)
 )
 
 type Manager struct {
@@ -24,17 +23,15 @@ type Manager struct {
 	nextWorkflow NextWorkflow
 	getSyncLimit GetSyncLimit
 	isWFDeleted  IsWorkflowDeleted
-	getWorkflow  GetWorkflow
 }
 
-func NewLockManager(getSyncLimit GetSyncLimit, nextWorkflow NextWorkflow, isWFDeleted IsWorkflowDeleted, getWorkflow GetWorkflow) *Manager {
+func NewLockManager(getSyncLimit GetSyncLimit, nextWorkflow NextWorkflow, isWFDeleted IsWorkflowDeleted) *Manager {
 	return &Manager{
 		syncLockMap:  make(map[string]Semaphore),
 		lock:         &sync.Mutex{},
 		nextWorkflow: nextWorkflow,
 		getSyncLimit: getSyncLimit,
 		isWFDeleted:  isWFDeleted,
-		getWorkflow:  getWorkflow,
 	}
 }
 
@@ -154,6 +151,8 @@ func (cm *Manager) TryAcquire(wf *wfv1.Workflow, nodeName string, syncLockRef *w
 		}
 	}
 
+	log.Errorf("======> %s", *syncLockRef.Semaphore.RebalanceKey)
+
 	holderKey := getHolderKey(wf, nodeName)
 	var priority int32
 	if wf.Spec.Priority != nil {
@@ -162,7 +161,7 @@ func (cm *Manager) TryAcquire(wf *wfv1.Workflow, nodeName string, syncLockRef *w
 		priority = 0
 	}
 	creationTime := wf.CreationTimestamp
-	lock.addToQueue(holderKey, priority, creationTime.Time)
+	lock.addToQueue(holderKey, priority, creationTime.Time, syncLockRef)
 
 	ensureInit(wf, syncLockRef.GetType())
 	currentHolders := cm.getCurrentLockHolders(lockKey)
@@ -320,7 +319,7 @@ func (cm *Manager) initializeSemaphore(semaphoreName string) (Semaphore, error) 
 	if err != nil {
 		return nil, err
 	}
-	queue := NewRebalanceQueue(limit, cm.getWorkflow)
+	queue := NewRebalanceQueue(limit)
 	s := NewSemaphore(semaphoreName, limit, cm.nextWorkflow, "semaphore", queue)
 	queue.setParentSemaphore(s)
 	return s, nil

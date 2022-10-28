@@ -443,11 +443,11 @@ func TestSemaphoreWfLevel(t *testing.T) {
 
 		sema := concurrenyMgr.syncLockMap["default/ConfigMap/my-config/workflow"].(*PrioritySemaphore)
 		assert.NotNil(t, sema)
-		assert.Len(t, sema.pending.items, 2)
+		assert.Len(t, sema.pending.all(), 2)
 		concurrenyMgr.ReleaseAll(wf1)
-		assert.Len(t, sema.pending.items, 1)
+		assert.Len(t, sema.pending.all(), 1)
 		concurrenyMgr.ReleaseAll(wf3)
-		assert.Len(t, sema.pending.items, 0)
+		assert.Len(t, sema.pending.all(), 0)
 	})
 }
 
@@ -656,11 +656,11 @@ func TestMutexWfLevel(t *testing.T) {
 
 		mutex := concurrenyMgr.syncLockMap["default/Mutex/my-mutex"].(*PriorityMutex)
 		assert.NotNil(t, mutex)
-		assert.Len(t, mutex.mutex.pending.items, 2)
+		assert.Len(t, mutex.mutex.pending.all(), 2)
 		concurrenyMgr.ReleaseAll(wf1)
-		assert.Len(t, mutex.mutex.pending.items, 1)
+		assert.Len(t, mutex.mutex.pending.all(), 1)
 		concurrenyMgr.ReleaseAll(wf2)
-		assert.Len(t, mutex.mutex.pending.items, 0)
+		assert.Len(t, mutex.mutex.pending.all(), 0)
 	})
 }
 

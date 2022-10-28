@@ -47,10 +47,10 @@ spec:
     synchronization:
       semaphore:
         configMapKeyRef:
-          name: scale-config
+          name: workflow-controller-configmap
           key: test-scale
-        rebalanceKey: "user-key-2"
+        rebalanceKey: "{{workflow.parameters.rebalance}}"
     container:
       image: alpine:latest
       command: [sh, -c]
-      args: ["sleep 240; echo acquired lock"]
+      args: ["sleep 25; echo acquired lock"]
